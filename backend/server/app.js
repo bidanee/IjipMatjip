@@ -3,7 +3,7 @@ import signupRouter from './routes/signup.js'
 import loginRouter from './routes/login.js'
 
 const app = express();
-const port = 3001;
+const port = 8001;
 
 app.use(express.json());
 
