@@ -64,7 +64,9 @@ class InfrastructureAnalyzer:
                 if distance <= radius_km:
                     nearby_infra.append({
                         'name': row['name'],
-                        'distance_km': round(distance, 3)
+                        'distance_km': round(distance, 3),
+                        'latitude': row['latitude'],
+                        'longitude':row['longitude']
                     })
             except (ValueError, TypeError):
                 # 위도/경도 값이 숫자가 아니거나 비어있는 경우 건너뜀
