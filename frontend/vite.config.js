@@ -8,6 +8,10 @@ export default defineConfig({
     tailwindcss()
   ],
     server: {
-    port: 4001, 
+      port: 4001,
+      host:'0.0.0.0',
+      proxy:{
+        '/api': 'http://13.55.21.100:8001'
+      }
   },
 })
