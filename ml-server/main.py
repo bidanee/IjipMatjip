@@ -24,10 +24,10 @@ def startup_event():
   
   # 미리 계산된 동네 점수 파일 로드
   try:
-    neighborhood_score_df = pd.read_csv('./datas/neighborhood_final_scores.csv')
+    neighborhood_score_df = pd.read_csv('./datas/neighborhood_final_scores_v2.csv')
     print("동네 점수 데이터 로딩 완료.")
   except FileNotFoundError:
-    print("경고 : 'neighborhood_final_scores.csv' 파일을 찾을 수 없습니다.")
+    print("경고 : 'neighborhood_final_scores_v2.csv' 파일을 찾을 수 없습니다.")
 
 # Pydantic 모델 정의
 class HouseInfo(BaseModel):
@@ -42,13 +42,12 @@ class InfraQuery(BaseModel):
   radius_km: float
   
 class RecommendationRequest(BaseModel):
-  preferences: List[str] # "school", "subway" 등 선호 조건 리스트 
+  preferences: List[str] # "school", "subway","price" 등 선호 조건 리스트 
   
 # API 엔드 포인트
 @app.post("/predict")
 def predict_price(info:HouseInfo):
   model_filename = f"real_estate_model_{info.region_code}.pkl"
-  
   if model_filename in loaded_models:
     model = loaded_models[model_filename]
   else:
@@ -63,9 +62,7 @@ def predict_price(info:HouseInfo):
   current_year = time.localtime().tm_year
   age = current_year -info.build_year
   input_data = pd.DataFrame([[info.area, info.floor, age]], columns=['area','floor','age'] )
-  
   prediction = model.predict(input_data)
-  
   return {"predicted_price": prediction[0]}
 
 @app.post("/infrastructure")
