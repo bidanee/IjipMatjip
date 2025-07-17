@@ -44,6 +44,8 @@ def precompute_scores():
 
         results.append({
             'dong': dong_name,
+            'latitude':latitude,
+            'longitude':longitude,
             'school_count': len(nearby_schools),
             'subway_count': len(nearby_subways),
             'avg_price': int(avg_price)
