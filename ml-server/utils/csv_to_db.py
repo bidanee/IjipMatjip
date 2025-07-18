@@ -51,7 +51,7 @@ def migrate_csv_to_db():
       avg_price BIGINT,
       school_score FLOAT,
       subway_score FLOAT,
-      price_score FLOAT,
+      price_score FLOAT
     );
     """
     cur.execute(create_tables_sql)
