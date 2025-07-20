@@ -24,7 +24,7 @@ def migrate_csv_to_db():
     
     # 2. 테이블 생성 SQL (transactions 테이블 추가)
     create_tables_sql = """
-    DROP TABLE IF EXISTS schools, subways, neighborhood_score;
+    DROP TABLE IF EXISTS schools, subways, neighborhood_scores, transactions;
     
     CREATE TABLE schools (
       id SERIAL PRIMARY KEY,
@@ -45,14 +45,12 @@ def migrate_csv_to_db():
     CREATE TABLE neighborhood_scores(
       id SERIAL PRIMARY KEY,
       dong VARCHAR(255),
+      sigungu_name VARCHAR(255),
       school_count INTEGER,
       subway_count INTEGER,
       avg_price BIGINT,
       school_score FLOAT,
       subway_score FLOAT,
-<<<<<<< HEAD
-      price_score FLOAT
-=======
       price_score FLOAT,
       latitude DOUBLE PRECISION,
       longitude DOUBLE PRECISION
@@ -67,7 +65,6 @@ def migrate_csv_to_db():
       price INTEGER,
       floor INTEGER,
       build_year INTEGER
->>>>>>> 6447d96 (csv_to_db 수정 거래 데이터 삽입 로직 추가)
     );
     """
     cur.execute(create_tables_sql)
@@ -93,19 +90,14 @@ def migrate_csv_to_db():
     print("지하철역 데이터 삽입 완료")
     
     # 동네 점수 데이터
-    scores_df = pd.read_csv('../datas/neighborhood_final_scores_v2.csv')
-    if 'latitude' not in scores_df.columns:
-      dong_coords = pd.read_csv('../datas/encoding_dong_code.csv', encoding='utf-8-sig')
-      dong_coords = dong_coords.rename(columns={'읍면동명': 'dong', 'Y': 'latitude', 'X': 'longitude'})
-      scores_df = pd.merge(scores_df, dong_coords[['dong', 'latitude', 'longitude']], on='dong', how='left')
-      
+    scores_df = pd.read_csv('../datas/neighborhood_final_scores.csv')
     for index, row in scores_df.iterrows():
       cur.execute(
         """
-        INSERT INTO neighborhood_scores (dong, school_count, subway_count, avg_price, school_score, subway_score, price_score) 
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO neighborhood_scores (dong, sigungu_name, school_count, subway_count, avg_price, school_score, subway_score, price_score, latitude, longitude) 
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """,
-        (row['dong'], row['school_count'], row['subway_count'], row['avg_price'], row['school_score'], row['subway_score'], row['price_score'], row.get('latitude'), row.get('longitude'))
+        (row['dong'], row['sigungu'], row['school_count'], row['subway_count'], row['avg_price'], row['school_score'], row['subway_score'], row['price_score'], row.get('latitude'), row.get('longitude'))
       )
     print("동네 점수 데이터 삽입 완료")
     
@@ -114,7 +106,7 @@ def migrate_csv_to_db():
     trade_df['dong_name'] = trade_df['시군구'].str.split().str[2]
     trade_df['전용면적(㎡)'] = pd.to_numeric(trade_df['전용면적(㎡)'], errors='coerce')
     trade_df['거래금액(만원)'] = pd.to_numeric(trade_df['거래금액(만원)'].str.replace(',', ''), errors='coerce')
-    trade_df.dropna(subset=['전용면적(㎡)', '거래금액(만원)','건축년도','층','법정동명','단지명'], inplace=True)
+    trade_df.dropna(subset=['전용면적(㎡)', '거래금액(만원)','건축년도','층','단지명'], inplace=True)
     
     for index, row in trade_df.iterrows():
       cur.execute(
@@ -122,7 +114,7 @@ def migrate_csv_to_db():
         INSERT INTO transactions (sigungu, dong_name, complex_name, area, price, floor, build_year) 
         VALUES (%s, %s, %s, %s, %s, %s, %s)
         """,
-        (row['시군구'], row['법정동명'], row['단지명'], row['전용면적(㎡)'], row['거래금액(만원)'], row['층'], row['건축년도'])
+        (row['시군구'], row['dong_name'], row['단지명'], row['전용면적(㎡)'], row['거래금액(만원)'], row['층'], row['건축년도'])
       )
     print("거래 데이터 삽입 완료")
     

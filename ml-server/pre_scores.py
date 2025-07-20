@@ -66,18 +66,20 @@ def precompute_scores():
         if (max_val - min_val) > 0:
             return round(((value - min_val) / (max_val - min_val)) * 100, 2)
         return 50.0
-
+    
     result_df['school_score'] = result_df['school_count'].apply(lambda x: normalize(x, min_schools, max_schools))
     result_df['subway_score'] = result_df['subway_count'].apply(lambda x: normalize(x, min_subways, max_subways))
     result_df['price_score'] = result_df['avg_price'].apply(
         lambda x: 100 - normalize(x, min_price, max_price) if x > 0 else 0
     )
+    result_df = pd.merge(result_df, dong_df[['읍면동명','시군구명']],left_on='dong', right_on='읍면동명', how='left')
+    result_df.drop('읍면동명', axis=1, inplace=True)
 
     print("\n--- 최종 점수 계산 완료 (상위 5개) ---")
     print(result_df.head())
 
-    result_df.to_csv('./datas/neighborhood_final_scores_v2.csv', index=False)
-    print("\n최종 점수 결과를 './datas/neighborhood_final_scores_v2.csv' 파일로 저장했습니다.")
+    result_df.to_csv('./datas/neighborhood_final_scores.csv', index=False)
+    print("\n최종 점수 결과를 './datas/neighborhood_final_scores.csv' 파일로 저장했습니다.")
 
 
 if __name__ == '__main__':
