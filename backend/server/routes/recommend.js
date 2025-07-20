@@ -8,17 +8,10 @@ const AI_SERVER_URL = process.env.FASTAPI_SERVER
 
 recommendRouter.post('/neighborhood', async (req, res) => {
   try {
-    const preferences = req.body.preferences;
-
-    const response = await axios.post(`${AI_SERVER_URL}/recommend/neighborhood`, {
-      preferences: preferences
-    });
-
-    res.json(response.data);
-
+    const response = await axios.post(`${AI_SERVER_URL}/recommend/neighborhood`,req.body)
+    res.json(response.data)
   } catch (error) {
     console.error('AI 서버 통신 중 에러 발생:', error.message);
-    
     if (error.response) {
       res.status(error.response.status).json(error.response.data);
     } else {
@@ -26,5 +19,19 @@ recommendRouter.post('/neighborhood', async (req, res) => {
     }
   }
 });
+
+recommendRouter.post('/properties', async (req, res) => {
+  try{
+    const response = await axios.post(`${AI_SERVER_URL}/recommend/properties`,req.body)
+    res.json(response.data)
+  } catch(error) {
+    console.error('AI 서버 매물 추천 API 통신 중 에러 발생 : ', error.message)
+    if(error.response) {
+      res.status(error.response.status).json(error.response.data)
+    }else{
+      res.status(500).json({ detail: '매물 추천 정보를 가져올 수 없습니다.'})
+    }
+  }
+})
 
 export default recommendRouter;

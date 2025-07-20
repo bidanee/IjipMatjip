@@ -5,7 +5,7 @@ import './index.css'
 
 import App from './App.jsx'
 import PreferenceView from './pages/PreferenceView.jsx'
-import RecommendationVew from './pages/RecommendationView.jsx'
+import RecommendationView from './pages/RecommendationView.jsx'
 import DetailView from './pages/DetailView.jsx'
 
 const router = createBrowserRouter([
@@ -14,7 +14,7 @@ const router = createBrowserRouter([
     element:<App/>,
     children:[
       {path:'/', element:<PreferenceView/>},// 조건 입력
-      {path:'/recommend',element:<RecommendationVew/>}, // 추천 결과
+      {path:'/recommend',element:<RecommendationView/>}, // 추천 결과
       {path:'/detail',element:<DetailView/>} // 상세분석
     ]
   }
