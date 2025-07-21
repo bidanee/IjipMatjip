@@ -12,9 +12,9 @@ directionsRouter.post('/', async (req,res) => {
   //origin: 출발지, destination: 도착지
   const {origin, destination} = req.body
     // 👇 디버깅을 위해 받은 좌표를 그대로 출력해봅니다.
-  console.log('--- 길찾기 요청 수신 ---');
-  console.log('출발지 (origin):', origin);
-  console.log('도착지 (destination):', destination);
+  // console.log('--- 길찾기 요청 수신 ---');
+  // console.log('출발지 (origin):', origin);
+  // console.log('도착지 (destination):', destination);
 
   if (!origin || !destination) {
     return res.status(400).json({detail:'출발지와 도착지 좌표가 모두 필요합니다.'})
@@ -27,7 +27,7 @@ directionsRouter.post('/', async (req,res) => {
       destination:`${destination.lng},${destination.lat}`
     }
 
-    console.log("카카오 길 찾기 파라미터", params)
+    // console.log("카카오 길 찾기 파라미터", params)
 
     const response = await axios.get(KAKAO_DIRECTIONS_URL, {
       params,
