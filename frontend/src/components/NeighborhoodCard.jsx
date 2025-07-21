@@ -1,5 +1,5 @@
 
-const NeighborhoodCard = ({dongData, onCardClick}) => {
+const NeighborhoodCard = ({dongData}) => {
   const tags = [];
   // 점수에 따라 동적으로 태그 생성
   if (dongData.school_score > 70) tags.push('#학군우수')
@@ -7,7 +7,7 @@ const NeighborhoodCard = ({dongData, onCardClick}) => {
   if (dongData.price_score > 70) tags.push('#가성비')
   
   return (
-    <div onClick={() => onCardClick({lat: dongData.latitude, lng: dongData.longitude})} className="border border-solid border-[#e0e0e0], rounded-lg p-4 w-2xs cursor-pointer shadow-md">
+    <div className="border border-solid border-[#e0e0e0], rounded-lg p-4 w-2xs cursor-pointer shadow-md">
       <h4 className="font-bold text-lg text-gray-800">{dongData.dong}</h4>
       <p className="text-sm text-gray-600 my-2">
         {/* todo : 나중에 LLM으로 동네 요약 생성 */}

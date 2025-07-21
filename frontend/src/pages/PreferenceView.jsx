@@ -1,15 +1,19 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {useNavigate} from 'react-router-dom'
+import regionData from '../data/regions.json'
 
 function PreferenceView () {
   const navigate = useNavigate()
   // 사용자의 입력을 저장하기 위한 state 변수
-  const [region, setRegion] = useState('')
+  const [sidoList, setSidoList] = useState([])
+  const [selectedSido, setSelectedSido] = useState('')
+  const [sigunguList, setSigunguList] = useState([])
+  const [selectedSigungu, setSelectedSigungu] = useState('')
   const [minSize, setMinSize] = useState('')
   const [maxSize, setMaxSize] = useState('')
   const [minBudget, setMinBudget] = useState('')
   const [maxBudget, setMaxBudget] = useState('')
-  const [roomCount, setRoomCount] = useState('1')
+  // const [roomCount, setRoomCount] = useState('1')
   const [lifestyle, setLifestyle] = useState({
     quite:true,
     lively:false,
@@ -19,6 +23,19 @@ function PreferenceView () {
   const [workAddress, setWorkAddress] = useState('')
   const [transportation, setTransportation] = useState('public') //기본값 대중 교통
 
+  useEffect(()=> {
+    setSidoList(Object.keys(regionData))
+  },[])
+
+  useEffect(() => {
+    if (selectedSido){
+      setSigunguList(regionData[selectedSido])
+      setSelectedSigungu('')
+    } else{
+      setSigunguList([])
+    }
+  },[selectedSido])
+
   const handleLifestyleChange = (e) => {
     const {name, checked} = e.target
     setLifestyle(prev => ({...prev, [name]: checked})) 
@@ -26,16 +43,16 @@ function PreferenceView () {
   
   const handleSearch = () => {
     const searchConditions = {
-      region,
+      region: selectedSigungu,
       size:{
         min: minSize ? parseInt(minSize) : null,
         max: maxSize ? parseInt(maxSize) : null
       },
       budget: {
-        min: minBudget ? parseInt(minBudget, 10) * 10000 : null,
-        max: maxBudget ? parseInt(maxBudget, 10) * 10000 : null,
+        min: minBudget ? parseInt(minBudget) : null,
+        max: maxBudget ? parseInt(maxBudget) : null,
       },
-      rooms: roomCount,
+      // rooms: roomCount,
       lifestyle:Object.keys(lifestyle).filter(key => lifestyle[key]),
       commute:{
         address: workAddress,
@@ -52,7 +69,16 @@ function PreferenceView () {
         <div className='space-y-4'>
           <div>
             <label className='block text-sm font-medium text-gray-700'>희망 지역</label>
-            <input type='text' value={region} onChange={(e)=> setRegion(e.target.value)} placeholder='예: 서울시 강남구' className='mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm'/>
+            <div className='flex items-center gap-2 mt-1'>
+              <select value={selectedSido} onChange={(e) => setSelectedSido(e.target.value)} className='w-full px-3 py-2 border border-gray-300 rounded-md'>
+                <option value="">시/도 선택</option>
+                {sidoList.map(sido => <option key={sido} value={sido}>{sido}</option>)}
+              </select>
+              <select value={selectedSigungu} onChange={(e) => setSelectedSigungu(e.target.value)} disabled={!selectedSido} className='w-full px-3 py-2 border border-gray-300 rounded-md'>
+                <option value="">시/군/구 선택</option>
+                {sigunguList.map(sigungu => <option key={sigungu} value={sigungu}>{sigungu}</option>)}
+              </select>
+            </div>
           </div>
           <div>
             <label className='block text-sm font-medium text-gray-700'>희망 평수</label>
@@ -70,14 +96,15 @@ function PreferenceView () {
               <input type="number" value={maxBudget} onChange={(e) => setMaxBudget(e.target.value)} placeholder="최대" className="w-full px-3 py-2 border border-gray-300 rounded-md"/>
             </div>
           </div>
-          <div>
+          {/* Todo: 방 개수 데이터를 찾지 못함. 추후 개발 예정
+           <div>
             <label className='block text-sm font-medium text-gray-700'>방 개수</label>
             <select type='text' value={roomCount} onChange={(e) => setRoomCount(e.target.value)} className='mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm'>
               <option value="1">1개</option>
               <option value="2">2개</option>
               <option value="3">3개 이상</option>
             </select>
-          </div>
+          </div> */}
         </div>
         {/* 우측 입력란 */}
         <div className='space-y-4'>

@@ -15,7 +15,7 @@ const router = createBrowserRouter([
     children:[
       {path:'/', element:<PreferenceView/>},// 조건 입력
       {path:'/recommend',element:<RecommendationView/>}, // 추천 결과
-      {path:'/detail',element:<DetailView/>} // 상세분석
+      {path:'/detail/:propertyId',element:<DetailView/>} // 상세분석
     ]
   }
 ])
