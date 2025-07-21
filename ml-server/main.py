@@ -138,7 +138,7 @@ def recommend_neighborhood(request: RecommendationRequest):
       where_sql_dong = "WHERE " + " AND ".join(where_clauses_dong) if where_clauses_dong else ""
       
       dong_query = f"""
-      SELECT *, ({total_score_sql}) AS total_score
+      SELECT dong, sigungu_name, school_score, subway_score, price_score, latitude, longitude, ({total_score_sql}) AS total_score
       FROM neighborhood_scores
       {where_sql_dong}
       ORDER BY total_score DESC
@@ -157,17 +157,17 @@ def recommend_neighborhood(request: RecommendationRequest):
         
         if request.budget and request.budget.min is not None:
           where_clauses_prop.append("price >= %s")
-          params_porp.append(request.budget.min)
+          params_prop.append(request.budget.min)
         if request.budget and request.budget.max is not None:
           where_clauses_prop.append("price <= %s")
-          params_porp.append(request.budget.max)
+          params_prop.append(request.budget.max)
         
         if request.size_pyeong and request.size_pyeong.min is not None:
           where_clauses_prop.append("area >= %s")
-          params_porp.append(request.size_pyeong.min * 3.305785)
+          params_prop.append(request.size_pyeong.min * 3.305785)
         if request.size_pyeong and request.size_pyeong.max is not None:
           where_clauses_prop.append("area <= %s")
-          params_porp.append(request.size_pyeong.max * 3.305785)
+          params_prop.append(request.size_pyeong.max * 3.305785)
         
         where_sql_prop = "WHERE " + " AND ".join(where_clauses_prop)
         # 여기 limit 매물 개수 지정
@@ -184,7 +184,9 @@ def recommend_neighborhood(request: RecommendationRequest):
             "predicted_price": prop.get('price'),
             "size_m2": prop.get('area'),
             "floor": prop.get('floor'),
-            "build_year": prop.get('build_year')
+            "build_year": prop.get('build_year'),
+            "latitude": prop.get('latitude'),
+            "longitude": prop.get('longitude')
           })
       
       # --- 3. 동네 목록과 매물 목록을 함께 반환 ---
