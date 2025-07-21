@@ -14,13 +14,27 @@ function DetailView() {
   const [nearbyInfrastructure, setNearbyInfrastructure] = useState(null);
 
   useEffect(() => {
-    // 상세 분석에 필요한 추가 데이터를 비동기적으로 불러옴
-    const fetchDetails = async () => {
+    // 주변 인프라 정보는 항상 불러오기
+    const fetchInfrastructure = async () => {
+      if (!propertyData?.latitude) return;
+      try{
+        const infraResponse = await axios.post('/api/infrastructure',{
+          latitude:propertyData.latitude,
+          longitude:propertyData.longitude,
+          radius_km:0.5
+        })
+        setNearbyInfrastructure(infraResponse.data)
+      }catch(error){
+        console.error("인프라 정보 로딩 실패:", error)
+      }
+    };
+
+    // 출퇴근 시간은 회사 주소가 있을 때만 계산
+    const fetchCommuteTime = async () => {
       if (!propertyData?.latitude || !searchConditions?.commute?.address) {
         setIsCommuteLoading(false);
         return;
       }
-
       setIsCommuteLoading(true);
       try {
         // 1. 회사 주소 좌표 변한
@@ -30,17 +44,14 @@ function DetailView() {
         // 2. 출퇴근 시간 계산
         const directionsResponse = await axios.post('/api/directions', {origin:{lat:propertyData.latitude, lng:propertyData.longitude}, destination: workCoords})
         setCommuteTime(directionsResponse.data.duration_minutes);
-
-        // 3. 주변 인프라 정보 요약 (지도 컴포넌트에서 호출하지만 요약정보를 위해 따로 호출)
-        const infraResponse = await axios.post('/api/infrastructure',{latitude: propertyData.latitude, longitude:propertyData.longitude, radius_km:0.5})
-        setNearbyInfrastructure(infraResponse.data);
       } catch (error){
-        console.error("상세 정보 로딩 실패:", error);
+        console.error("출퇴근 시간 계산 실패:", error);
       } finally{
         setIsCommuteLoading(false)
       }
     }
-    fetchDetails();
+    fetchInfrastructure();
+    fetchCommuteTime();
   },[propertyData,searchConditions]);
 
   if (!propertyData){
@@ -60,7 +71,7 @@ function DetailView() {
         <div>
           <h3 className='text-xl font-bold mb-2'>지도 분석</h3>
           <div className='border rounded-lg overflow-hidden'>
-            <InfrastructureMap lat={propertyData.latitude} lng={propertyData.longitude}/>
+            <InfrastructureMap lat={propertyData.latitude} lng={propertyData.longitude} isPropertyMarker={true}/>
           </div>
         </div>
         {/* 상세 정보 */}
