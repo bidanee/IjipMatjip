@@ -1,7 +1,7 @@
 import chardet
 import pandas as pd
 
-file_path = '../datas/seoul_transactions_2023062.csv'
+file_path = '../datas/parksd.csv'
 
 # 파일의 인코딩 감지
 with open(file_path, 'rb') as f: # #파일을 바이너리 모드(rb)로 열어야 합니다
@@ -26,7 +26,7 @@ except UnicodeDecodeError:
     print(f"utf-8로 파일을 읽는데 실패했습니다 : {e}")
     
 # 깨지지 않은 DataFrame을 새 CSV 파일로 저장합니다.
-output_file_path = '../datas/seoul_transactions_202306.csv'
+output_file_path = '../datas/park.csv'
 
 # encoding='utf-8-sig'로 저장하는 것이 핵심!
 df.to_csv(output_file_path, index=False, encoding='utf-8-sig')
