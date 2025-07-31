@@ -1,137 +1,217 @@
-import { useEffect, useState } from 'react'
-import {useNavigate} from 'react-router-dom'
-import regionData from '../data/regions.json'
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import regionData from '../data/regions.json';
 
-function PreferenceView () {
-  const navigate = useNavigate()
-  // 사용자의 입력을 저장하기 위한 state 변수
-  const [sidoList, setSidoList] = useState([])
-  const [selectedSido, setSelectedSido] = useState('')
-  const [sigunguList, setSigunguList] = useState([])
-  const [selectedSigungu, setSelectedSigungu] = useState('')
-  const [minSize, setMinSize] = useState('')
-  const [maxSize, setMaxSize] = useState('')
-  const [minBudget, setMinBudget] = useState('')
-  const [maxBudget, setMaxBudget] = useState('')
-  // const [roomCount, setRoomCount] = useState('1')
-  const [lifestyle, setLifestyle] = useState({
-    quite:true,
-    lively:false,
-    school:true,
-    pet:false
-  })
-  const [workAddress, setWorkAddress] = useState('')
-  const [transportation, setTransportation] = useState('public') //기본값 대중 교통
+// --- 아이콘 컴포넌트 ---
+const HomeIcon = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+       stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
+  </svg>
+);
 
-  useEffect(()=> {
-    setSidoList(Object.keys(regionData))
-  },[])
+const ZapIcon = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+       stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2z" />
+  </svg>
+);
+
+const lifestyleOptions = ['조용한 곳', '학군 중요', '교통 편리', '번화가', '생활편의시설'];
+const PreferenceView = () => {
+  const [tradeType, setTradeType] = useState('jeonse')
+  const [sidoList, setSidoList] = useState([]);
+  const [selectedSido, setSelectedSido] = useState('');
+  const [sigunguList, setSigunguList] = useState([]);
+  const [selectedSigungu, setSelectedSigungu] = useState('');
+  const [selectedLifestyles, setSelectedLifestyles] = useState(['교통 편리']);
+  const navigation = useNavigate();
 
   useEffect(() => {
-    if (selectedSido){
-      setSigunguList(regionData[selectedSido])
-      setSelectedSigungu('')
-    } else{
-      setSigunguList([])
+    setSidoList(Object.keys(regionData));
+    if (Object.keys(regionData).length > 0) {
+      setSelectedSido(Object.keys(regionData)[0]);
     }
-  },[selectedSido])
+  }, []);
 
-  const handleLifestyleChange = (e) => {
-    const {name, checked} = e.target
-    setLifestyle(prev => ({...prev, [name]: checked})) 
-  }
-  
+  useEffect(() => {
+    if (selectedSido) {
+      setSigunguList(regionData[selectedSido] || []);
+      setSelectedSigungu('');
+    } else {
+      setSigunguList([]);
+    }
+  }, [selectedSido]);
+
+  const handleLifestyleClick = (lifestyle) => {
+    setSelectedLifestyles((prev) =>
+      prev.includes(lifestyle)
+        ? prev.filter((item) => item !== lifestyle)
+        : [...prev, lifestyle]
+    );
+  };
+
   const handleSearch = () => {
-    const searchConditions = {
-      region: selectedSigungu,
-      size:{
-        min: minSize ? parseInt(minSize) : null,
-        max: maxSize ? parseInt(maxSize) : null
-      },
-      budget: {
-        min: minBudget ? parseInt(minBudget) : null,
-        max: maxBudget ? parseInt(maxBudget) : null,
-      },
-      // rooms: roomCount,
-      lifestyle:Object.keys(lifestyle).filter(key => lifestyle[key]),
-      commute:{
-        address: workAddress,
-        transport: transportation,
-      }
-    } 
-    console.log('최종 검색 조건: ', searchConditions)
-    navigate('/recommend', {state:{conditions: searchConditions}})
-  }
+    navigation('/recommend');
+  };
+
   return (
-    <div>
-      <h2 className='text-xl font-bold mb-4'>1. 원하는 조건을 알려주세요</h2>
-      <div className='grid grid-cols-2 gap-8'>
-        <div className='space-y-4'>
-          <div>
-            <label className='block text-sm font-medium text-gray-700'>희망 지역</label>
-            <div className='flex items-center gap-2 mt-1'>
-              <select value={selectedSido} onChange={(e) => setSelectedSido(e.target.value)} className='w-full px-3 py-2 border border-gray-300 rounded-md'>
-                <option value="">시/도 선택</option>
-                {sidoList.map(sido => <option key={sido} value={sido}>{sido}</option>)}
-              </select>
-              <select value={selectedSigungu} onChange={(e) => setSelectedSigungu(e.target.value)} disabled={!selectedSido} className='w-full px-3 py-2 border border-gray-300 rounded-md'>
-                <option value="">시/군/구 선택</option>
-                {sigunguList.map(sigungu => <option key={sigungu} value={sigungu}>{sigungu}</option>)}
-              </select>
-            </div>
+    <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-pink-100 to-orange-50 p-4">
+      <div className="w-full max-w-2xl flex flex-col gap-8 bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-gray-200">
+        <div className="text-center flex flex-col gap-2">
+          <div className="flex justify-center items-center">
+            <HomeIcon className="w-12 h-12 mb-2 text-[#FF7E97]" />
           </div>
-          <div>
-            <label className='block text-sm font-medium text-gray-700'>희망 평수</label>
-            <div className="flex items-center gap-2 mt-1">
-              <input type="number" value={minSize} onChange={(e) => setMinSize(e.target.value)} placeholder="최소" className="w-full px-3 py-2 border border-gray-300 rounded-md"/>
-              <span>~</span>
-              <input type="number" value={maxSize} onChange={(e) => setMaxSize(e.target.value)} placeholder="최대" className="w-full px-3 py-2 border border-gray-300 rounded-md"/>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">예산 범위 (만원)</label>
-            <div className="flex items-center gap-2 mt-1">
-              <input type="number" value={minBudget} onChange={(e) => setMinBudget(e.target.value)} placeholder="최소" className="w-full px-3 py-2 border border-gray-300 rounded-md"/>
-              <span>~</span>
-              <input type="number" value={maxBudget} onChange={(e) => setMaxBudget(e.target.value)} placeholder="최대" className="w-full px-3 py-2 border border-gray-300 rounded-md"/>
-            </div>
-          </div>
-          {/* Todo: 방 개수 데이터를 찾지 못함. 추후 개발 예정
-           <div>
-            <label className='block text-sm font-medium text-gray-700'>방 개수</label>
-            <select type='text' value={roomCount} onChange={(e) => setRoomCount(e.target.value)} className='mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm'>
-              <option value="1">1개</option>
-              <option value="2">2개</option>
-              <option value="3">3개 이상</option>
-            </select>
-          </div> */}
+          <h1 className="text-3xl font-bold text-slate-900">AI 부동산 추천</h1>
+          <p className="text-gray-600 mt-2">
+            원하는 조건을 입력하고, 나에게 맞는 동네와 집을 찾아보세요.
+          </p>
         </div>
-        {/* 우측 입력란 */}
-        <div className='space-y-4'>
-          <div>
-            <label className='block text-sm font-medium text-gray-700'>라이프 스타일</label>
-            <div className='mt-2 space-x-4'>
-              <label><input type='checkbox' name='quite' checked={lifestyle.quite} onChange={handleLifestyleChange}/>조용한 주거 환경</label>
-              <label><input type='checkbox' name='lively' checked={lifestyle.lively} onChange={handleLifestyleChange}/>번화가 선호</label>
-              <label><input type='checkbox' name='school' checked={lifestyle.school} onChange={handleLifestyleChange}/>학군 중요</label>
-              <label><input type='checkbox' name='pet' checked={lifestyle.pet} onChange={handleLifestyleChange}/>반려동물</label>
+
+        <div className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className='md:col-span-2'>
+              <label className="font-semibold text-gray-700">희망지역</label>
+              <div className="flex space-x-2 mt-2 gap-2">
+                <select
+                  value={selectedSido}
+                  onChange={(e) => setSelectedSido(e.target.value)}
+                  className="w-1/2 p-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF7E97]"
+                >
+                  <option value="">시/도 선택</option>
+                  {sidoList.map((sido) => (
+                    <option key={sido} value={sido}>
+                      {sido}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={selectedSigungu}
+                  onChange={(e) => setSelectedSigungu(e.target.value)}
+                  className="w-1/2 p-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF7E97]"
+                  disabled={!selectedSido}
+                >
+                  <option value="">시/군/구 선택</option>
+                  {sigunguList.map((sigungu) => (
+                    <option key={sigungu} value={sigungu}>
+                      {sigungu}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className='md:col-span-2'>
+              <label className='block text-sm font-semibold text-gray-700'>
+                거래유형
+              </label>
+              <div className='flex space-x-4 gap-4'>
+                <div className='flex items-center gap-2'>
+                    <input type='radio' id="tradeTypeJeonse" name="tradeType" value="jeonse" checked={tradeType === 'jeonse'} onChange={(e) => setTradeType(e.target.value)} className='h-4 w-4 text-pink-600 border-gray-300 forcus:ring-pink-500' />
+                    <label htmlFor='tradeTypeJeonse' className='ml-2 block text-sm text-gray-900'>전세</label>
+                </div>
+                <div className='flex items-center gap-2'>
+                    <input type='radio' id="tradeTypeWolse" name="tradeType" value="wolse" checked={tradeType === 'wolse'} onChange={(e) => setTradeType(e.target.value)} className='h-4 w-4 text-pink-600 border-gray-300 forcus:ring-pink-500' />
+                    <label htmlFor='tradeTypeWolse' className='ml-2 block text-sm text-gray-900'>월세</label>
+                </div>
+              </div>
+            </div>
+            {/* 전세 */}
+            {tradeType === 'jeonse' && (
+              <div className='md:col-span-2 grid grid-cols-2 gap-x-6' >
+                <div>
+                  <label className='block text-sm font-semibold text-gray-700 mb-1' >
+                    전세금 (최소)
+                  </label>
+                  <div className='flex items-center gap-2'>
+                    <input type='number' placeholder='10000' className=' p-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF7E97]'/>
+                    <span className='ml-2 text-gray-600'>만원</span>
+                  </div>
+                </div>
+                <div>
+                  <label className='block text-sm font-semibold text-gray-700 mb-1' >
+                    전세금 (최대)
+                  </label>
+                  <div className='flex items-center gap-2'>
+                    <input type='number' placeholder='30000' className='p-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF7E97]'/>
+                    <span className='ml-2 text-gray-600'>만원</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* 월세 */}
+            {tradeType === 'wolse' && (
+              <div className='md:col-span-2'>
+                <div>
+                  <label className='block text-sm font-semibold text-gray-700 mb-1'>
+                    보증금 (최대)
+                  </label>
+                  <div className='flex items-center mb-4 gap-3'>
+                    <input type='number' placeholder='5000' className='flex-1 p-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF7E97]'/>
+                    <span className='ml-2 text-gray-600'>만원</span>
+                  </div>
+                </div>
+                <div className='grid grid-cols-2 gap-x-4'>
+                  <div>
+                    <label className='block text-sm font-semibold text-gray-700 mb-1'>월세 (최소)</label>
+                    <div className='flex items-center gap-2'>
+                      <input type='number' placeholder='50' className=' p-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF7E97]'/>
+                      <span className='ml-2 text-gray-600'>만원</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className='block text-sm font-semibold text-gray-700 mb-1'>월세 (최대)</label>
+                    <div className='flex items-center gap-2'>
+                      <input type='number' placeholder='100' className=' p-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF7E97]'/>
+                      <span className='ml-2 text-gray-600'>만원</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div className='md:col-span-1'>
+              <label className='block text-sm font-semibold text-gray-700 mb-1'>방 구조</label>
+              <select className='w-full p-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF7E97]'>
+                <option>전체</option>
+                <option>원룸</option>
+                <option>투룸</option>
+              </select>
+            </div>
+            <div className='md:col-span-1'>
+              <label className='block text-sm font-semibold text-gray-700 mb-1'>평수</label>
+              <input type='number' placeholder='10' className='w-full p-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF7E97]' />
+            </div>
+            <div className="md:col-span-2">
+              <label className="font-semibold text-gray-700">라이프스타일 (선택)</label>
+              <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {lifestyleOptions.map((style) => (
+                  <button
+                    key={style}
+                    type='button'
+                    onClick={() => handleLifestyleClick(style)}
+                    className={`p-3 text-sm border rounded-lg transition-all focus:outline-none focus:ring-2
+                      ${selectedLifestyles.includes(style)
+                        ? 'border-[#FF7E97] bg-pink-50 text-[#FF7E97] ring-[#FF7E97]'
+                        : 'border-gray-300 text-gray-700 hover:border-[#FF7E97] hover:bg-pink-50 hover:text-[#FF7E97]'}`}
+                  >
+                    {style}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-          <div>
-            <label className='block text-sm font-medium text-gray-700'>출퇴근 정보</label>
-            <input type='text' value={workAddress} onChange={(e) => setWorkAddress(e.target.value)} placeholder='회사 주소 (예: 서울 강남구 테헤란로)' className='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm'/>
-            <select value={transportation} onChange={(e)=>setTransportation(e.target.value)} className='mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm'>
-              <option value='public'>대중교통</option>
-              <option value='car'>자가용</option>
-            </select>
-          </div>
+
+          <button
+            onClick={handleSearch}
+            className="w-full mt-4 bg-gradient-to-r from-[#FF7E97] to-[#F89BAF] text-white font-bold py-4 rounded-lg text-lg flex items-center justify-center gap-2 shadow-lg shadow-[#FF7E97]/40 hover:scale-105 transition-transform"
+          >
+            <ZapIcon className="w-6 h-6" />
+            <span>AI 추천받기</span>
+          </button>
         </div>
       </div>
-      <button onClick={handleSearch} className='mt-6 px-4 py-2 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-700 cursor-pointer'>
-        AI 추천받기
-      </button>
     </div>
-  )
-}
+  );
+};
 
-export default PreferenceView
+export default PreferenceView;
