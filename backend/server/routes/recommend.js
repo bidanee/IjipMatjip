@@ -20,9 +20,9 @@ recommendRouter.post('/neighborhood', async (req, res) => {
   }
 });
 
-recommendRouter.post('/properties', async (req, res) => {
+recommendRouter.post('/estates', async (req, res) => {
   try{
-    const response = await axios.post(`${AI_SERVER_URL}/recommend/properties`,req.body)
+    const response = await axios.post(`${AI_SERVER_URL}/recommend/estates`,req.body)
     res.json(response.data)
   } catch(error) {
     console.error('AI 서버 매물 추천 API 통신 중 에러 발생 : ', error.message)
