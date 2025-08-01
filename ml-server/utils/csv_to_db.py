@@ -75,18 +75,21 @@ def migrate_csv_to_db():
       password=os.getenv("DB_PASSWORD"),
     )
     cur = conn.cursor()
-    print("DB 연결 성공")
+    print("✅ DB 연결 성공")
     
     cur.execute("DROP TABLE IF EXISTS estates;")
+    # 👇 room_bathrooms 오타 수정 및 build_date 타입 VARCHAR로 변경
     cur.execute("""
       CREATE TABLE estates (
         id SERIAL PRIMARY KEY, deal_type VARCHAR(50),
-        price_deposit BIGINT, price_rent INT, maintenance_fee INT, room_type VARCHAR(100), area_m2 FLOAT, floor VARCHAR(50), address VARCHAR(255), build_date VARCHAR(50), room_bathrooms VARCHAR(100), photo_url TEXT, latitude DOUBLE PRECISION, longitude DOUBLE PRECISION, geom GEOGRAPHY(Point, 4326)
+        price_deposit BIGINT, price_rent INT, maintenance_fee INT, 
+        room_type VARCHAR(100), area_m2 FLOAT, floor VARCHAR(50), 
+        address VARCHAR(255), build_date VARCHAR(50), rooms_bathrooms VARCHAR(100), 
+        photo_url TEXT, latitude DOUBLE PRECISION, longitude DOUBLE PRECISION, 
+        geom GEOGRAPHY(Point, 4326)
       );
-    """  
-    )
-
-    print("새로운 테이블 생성 완료")
+    """)
+    print("✅ 새로운 estates 테이블 생성 완료")
     
     df = pd.read_csv('../datas/real_estate_data.csv')
     df = df.where(pd.notnull(df), None)
@@ -104,18 +107,20 @@ def migrate_csv_to_db():
       lat, lng = get_coords(row['상세주소'], api_key)
       
       if lat and lng:
+        # 👇 INSERT 구문의 컬럼과 VALUES 개수를 14개로 일치시킴
         cur.execute(
           """
             INSERT INTO estates
-            (deal_type, price_deposit, price_rent, maintenance_fee, room_type, area_m2, floor, address, build_date, room_bathrooms, photo_url, latitude, longitude, geom)
+            (deal_type, price_deposit, price_rent, maintenance_fee, room_type, area_m2, floor, address, build_date, rooms_bathrooms, photo_url, latitude, longitude, geom)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s),4326))
           """,
           (deal_type, deposit, rent, maintenance_fee, row['방 종류'], area_m2, row['층수'], row['상세주소'], row['준공년월'], row['방/욕실 수'], photo_url, lat, lng, lng, lat)
         )
-      time.sleep(0.5)
+      # 👇 API 호출 간격을 줄여 속도 향상
+      time.sleep(0.05)
     
     conn.commit()
-    print("새로운 데이터가 성공적으로 DB에 저장되었습니다.")
+    print("🎉 새로운 데이터가 성공적으로 DB에 저장되었습니다.")
   except Exception as e:
     if conn: conn.rollback()
     print(f"오류 발생: {e}")
