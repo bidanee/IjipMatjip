@@ -1,6 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import NeighborhoodCard from '../components/NeighborhoodCard';
+
+const formatPrice = (priceInManwon) => {
+  if (!priceInManwon) return '정보 없음';
+  if (priceInManwon >= 10000) {
+    const eok = Math.floor(priceInManwon / 10000);
+    const man = priceInManwon % 10000;
+    return man > 0 ? `${eok}억 ${man.toLocaleString()}만` : `${eok}억`;
+  }
+  return `${priceInManwon.toLocaleString()}만`;
+};
 
 const RecommendationView = () => {
   const navigate = useNavigate();
@@ -8,7 +19,7 @@ const RecommendationView = () => {
   const searchConditions = location.state?.conditions;
 
   const [recommendations, setRecommendations] = useState([]);
-  const [properties, setProperties] = useState([]);
+  const [estates, setEstates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDong, setSelectedDong] = useState(null);
 
@@ -23,23 +34,23 @@ const RecommendationView = () => {
       setLoading(true);
       try {
         const payload = {
-            preferences: searchConditions.lifestyle,
+            preferences: searchConditions.preferences,
             region: searchConditions.region,
-            budget: searchConditions.budget,
-            size_pyeong: { min: searchConditions.size_pyeong, max: searchConditions.size_pyeong }, // 평수 단일 값 처리
             deal_type: searchConditions.deal_type,
+            budget: searchConditions.budget,
+            size_pyeong: searchConditions.size_pyeong,
             room_type: searchConditions.room_type,
         };
-
+        console.log("서버로 전송하는 최종 payload:", payload);
         const response = await axios.post('/api/recommend/neighborhood', payload);
-        const { neighborhoods, properties } = response.data;
+        const { neighborhoods, estates } = response.data;
         
         setRecommendations(neighborhoods || []);
-        setProperties(properties || []);
+        setEstates(estates || []);
 
       } catch (error) {
-        console.error('추천 데이터를 불러오는 데 실패했습니다.', error);
-        alert(error.response?.data?.detail || '데이터를 불러올 수 없습니다.');
+        console.error('추천 데이터를 불러오는 데 실패했습니다.',  error.response?.data || error);
+        alert(error.response?.data?.detail?.[0]?.msg || '데이터를 불러올 수 없습니다.');
       } finally {
         setLoading(false);
       }
@@ -52,9 +63,9 @@ const RecommendationView = () => {
     setSelectedDong(prev => prev === dongName ? null : dongName);
   };
 
-  const filteredProperties = selectedDong
-    ? properties.filter(prop => prop.address.includes(selectedDong))
-    : properties;
+  const filteredEstates = selectedDong
+    ? estates.filter(prop => prop.address.includes(selectedDong))
+    : estates;
 
   if (loading) {
     return <div className="text-center p-10">AI가 최적의 동네와 매물을 찾고 있습니다...</div>;
@@ -97,8 +108,8 @@ const RecommendationView = () => {
             {selectedDong && <span className='text-sm font-semibold text-pink-600 bg-pink-100 px-3 py-1 rounded-full ml-3'>{selectedDong}</span>}
           </h2>
           <div className='space-y-4'>
-            {filteredProperties.length > 0 ? (
-              filteredProperties.map(prop => (
+            {filteredEstates.length > 0 ? (
+              filteredEstates.map(prop => (
                 <Link to={`/detail/${prop.id}`} state={{ propertyData: prop, conditions: searchConditions }} key={prop.id} className='no-underline text-black'>
                   <div className='bg-white/80 backdrop-blur-lg p-4 rounded-xl shadow-lg border border-gray-200 flex items-center gap-6 hover:shadow-2xl hover:border-pink-300 transition-all duration-300 cursor-pointer'>
                     <img src={prop.photo_url} alt={prop.address} className='w-32 h-32 object-cover rounded-lg' onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/200x130/fbcfe8/4a044e?text=No+Image'; }}/>
@@ -111,8 +122,7 @@ const RecommendationView = () => {
                       <p className='text-sm text-gray-500'>{prop.deal_type}</p>
                       <p className='font-bold text-lg text-[#FF7E97]'>
                         {prop.deal_type === '월세' 
-                          ? `${(prop.price_deposit / 10000).toFixed(0)}억 / ${prop.price_rent}`
-                          : `${(prop.price_deposit / 10000).toFixed(1)}억`
+                          ?`${formatPrice(prop.price_deposit)} / ${prop.price_rent}` : formatPrice(prop.price_deposit)
                         }
                       </p>
                     </div>

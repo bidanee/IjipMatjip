@@ -3,58 +3,54 @@ import psycopg2
 import psycopg2.extras
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Any, Union
 
 router = APIRouter()
 
 def get_db_connection():
   conn = psycopg2.connect(
-    host=os.getenv("DB_HOST"),
-    port=os.getenv("DB_PORT"),
-    dbname=os.getenv("DB_NAME"),
-    user=os.getenv("DB_USER"),
+    host=os.getenv("DB_HOST"), port=os.getenv("DB_PORT"),
+    dbname=os.getenv("DB_NAME"), user=os.getenv("DB_USER"),
     password=os.getenv("DB_PASSWORD")
   )
   return conn
 
-# --- BaseModel ---
-class Budget(BaseModel):
-  min:int | None = None
-  max:int | None = None
-  
+# --- Pydantic 모델 정의 ---
 class SizePyeong(BaseModel):
-  min:int | None = None
-  max:int | None = None
+  min: int | None = None
+  max: int | None = None
+
+class JeonseBudget(BaseModel):
+    min: int | None = None
+    max: int | None = None
+
+class WolseBudget(BaseModel):
+    deposit_max: int | None = None
+    rent_min: int | None = None
+    rent_max: int | None = None
   
 class RecommendationRequest(BaseModel):
   preferences: List[str]
   region: str | None = None
-  budget: Budget | None = None
+  deal_type: str
+  budget: Union[JeonseBudget, WolseBudget] 
   size_pyeong: SizePyeong | None = None
-  deal_type: str | None = None
   room_type: str | None = None
   
+@router.post("/neighborhood")
 @router.post("/neighborhood")
 def recommend_neighborhood_and_estates(request: RecommendationRequest):
   conn = get_db_connection()
   try:
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-      # 1. 최적의 동네 추천
+      # 1. 최적의 동네 추천 (이전과 동일)
       score_clauses = [f"{pref}_score" for pref in request.preferences if f"{pref}_score" in ['school_score', 'subway_score', 'price_score']]
-      total_score_sql = " + ".join(score_clauses) if score_clauses else "school_score + subway_score + price_score"
-      
-      where_clauses_dong = ["latitude IS NOT NULL AND longitude IS NOT NULL"]
+      total_score_sql = " + ".join(score_clauses) if score_clauses else "(school_score + subway_score + price_score) / 3"
+      where_clauses_dong = ["latitude IS NOT NULL"]
       params_dong = []
       if request.region:
         where_clauses_dong.append("sigungu_name = %s")
         params_dong.append(request.region)
-      if request.budget and request.budget.min is not None:
-        where_clauses_dong.append("avg_price >= %s")
-        params_dong.append(request.budget.min)
-      if request.budget and request.budget.max is not None:
-        where_clauses_dong.append("avg_price <= %s")
-        params_dong.append(request.budget.max)
-        
       where_sql_dong = "WHERE " + " AND ".join(where_clauses_dong)
       dong_query = f"SELECT *, ({total_score_sql}) AS total_score FROM neighborhood_scores {where_sql_dong} ORDER BY total_score DESC LIMIT 5;"
       cur.execute(dong_query, tuple(params_dong))
@@ -65,29 +61,34 @@ def recommend_neighborhood_and_estates(request: RecommendationRequest):
       recommended_dong_names = [d['dong'] for d in recommended_dongs]
       
       if recommended_dong_names:
-        # address 필터링을 위한 LIKE 조건
         dong_conditions = " OR ".join([f"address LIKE %s" for _ in recommended_dong_names])
         dong_params = [f"%{name}%" for name in recommended_dong_names]
         
         where_clauses_prop = [f"({dong_conditions})"]
         params_prop = dong_params
         
-        if request.deal_type:
-          where_clauses_prop.append("deal_type = %s")
-          params_prop.append(request.deal_type)
         if request.room_type:
           where_clauses_prop.append("room_type LIKE %s")
           params_prop.append(f"%{request.room_type}%")
           
-        # 예산 필터 (보증금 기준)
-        if request.budget and request.budget.min is not None:
-          where_clauses_prop.append("price_deposit >= %s")
-          params_prop.append(request.budget.min)
-        if request.budget and request.budget.max is not None:
-          where_clauses_prop.append("price_deposit <= %s")
-          params_prop.append(request.budget.max)
+        if request.deal_type == '전세' and isinstance(request.budget, JeonseBudget):
+            if request.budget.min is not None:
+                where_clauses_prop.append("price_deposit >= %s")
+                params_prop.append(request.budget.min)
+            if request.budget.max is not None:
+                where_clauses_prop.append("price_deposit <= %s")
+                params_prop.append(request.budget.max)
+        elif request.deal_type == '월세' and isinstance(request.budget, WolseBudget):
+            if request.budget.deposit_max is not None:
+                where_clauses_prop.append("price_deposit <= %s")
+                params_prop.append(request.budget.deposit_max)
+            if request.budget.rent_min is not None:
+                where_clauses_prop.append("price_rent >= %s")
+                params_prop.append(request.budget.rent_min)
+            if request.budget.rent_max is not None:
+                where_clauses_prop.append("price_rent <= %s")
+                params_prop.append(request.budget.rent_max)
           
-        # 평수 필터
         if request.size_pyeong and request.size_pyeong.min is not None:
           where_clauses_prop.append("area_m2 >= %s")
           params_prop.append(request.size_pyeong.min * 3.305785)
@@ -96,7 +97,7 @@ def recommend_neighborhood_and_estates(request: RecommendationRequest):
           params_prop.append(request.size_pyeong.max * 3.305785)
           
         where_sql_prop = "WHERE " + " AND ".join(where_clauses_prop)
-        prop_query = f"SELECT * FROM estates {where_sql_prop} LIMIT 10;"
+        prop_query = f"SELECT * FROM estates {where_sql_prop} LIMIT 20;"
         
         cur.execute(prop_query, tuple(params_prop))
         estates = [dict(row) for row in cur.fetchall()]
@@ -108,4 +109,3 @@ def recommend_neighborhood_and_estates(request: RecommendationRequest):
   finally:
     if conn:
       conn.close()
-      

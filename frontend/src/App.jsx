@@ -1,11 +1,10 @@
 import {Outlet} from 'react-router-dom'
+import NavBar from './components/NavBar'
 
 function App() {
   return(
-    <div className='p-8'>
-      <header className='mb-8'>
-        <h1 className='text-3xl font-bold'>AI 맞춤형 집 찾기</h1>
-      </header>
+    <div>
+      {/* <NavBar/> */}
       <main>
         <Outlet/>
       </main>

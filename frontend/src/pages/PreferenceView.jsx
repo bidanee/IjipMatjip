@@ -15,13 +15,13 @@ const ZapIcon = (props) => (
   </svg>
 );
 
-const lifestyleOptions = ['조용한 곳', '학군 중요', '교통 편리', '번화가', '생활편의시설'];
+const lifestyleOptions = ['조용한 곳', '학군 중요', '교통 편리', '번화가', '생활편의시설','가성비'];
 
 const PreferenceView = () => {
   const navigate = useNavigate();
 
   // --- 모든 입력 값을 저장하기 위한 State 선언 ---
-  const [tradeType, setTradeType] = useState('jeonse');
+  const [tradeType, setTradeType] = useState('전세');
   const [selectedSido, setSelectedSido] = useState('');
   const [selectedSigungu, setSelectedSigungu] = useState('');
   
@@ -65,10 +65,11 @@ const PreferenceView = () => {
   };
 
   const handleSearch = () => {
+    // --- 👇 이 부분을 수정합니다 ---
     const searchConditions = {
       region: selectedSigungu,
       deal_type: tradeType,
-      budget: tradeType === 'jeonse' ? {
+      budget: tradeType === '전세' ? {
         min: jeonseMin ? parseInt(jeonseMin) : null,
         max: jeonseMax ? parseInt(jeonseMax) : null,
       } : {
@@ -77,9 +78,15 @@ const PreferenceView = () => {
         rent_max: wolseMax ? parseInt(wolseMax) : null,
       },
       room_type: roomType === '전체' ? null : roomType,
-      size_pyeong: areaPyeong ? parseInt(areaPyeong) : null,
-      lifestyle: selectedLifestyles,
+      // 평수 데이터를 {min, max} 객체 형태로 만듭니다.
+      size_pyeong: {
+        min: areaPyeong ? parseInt(areaPyeong) : null,
+      },
+      preferences: selectedLifestyles,
     };
+    // --- 여기까지 수정 ---
+    
+    console.log("최종 검색 조건:", searchConditions);
     navigate('/recommend', { state: { conditions: searchConditions } });
   };
 
@@ -117,17 +124,17 @@ const PreferenceView = () => {
               <label className='block text-sm font-semibold text-gray-700'>거래유형</label>
               <div className='flex space-x-4 gap-4'>
                 <div className='flex items-center gap-2'>
-                    <input type='radio' id="tradeTypeJeonse" name="tradeType" value="jeonse" checked={tradeType === 'jeonse'} onChange={(e) => setTradeType(e.target.value)} className='h-4 w-4 text-pink-600 border-gray-300 focus:ring-pink-500' />
+                    <input type='radio' id="tradeTypeJeonse" name="tradeType" value="전세" checked={tradeType === '전세'} onChange={(e) => setTradeType(e.target.value)} className='h-4 w-4 text-pink-600 border-gray-300 focus:ring-pink-500' />
                     <label htmlFor='tradeTypeJeonse' className='ml-2 block text-sm text-gray-900'>전세</label>
                 </div>
                 <div className='flex items-center gap-2'>
-                    <input type='radio' id="tradeTypeWolse" name="tradeType" value="wolse" checked={tradeType === 'wolse'} onChange={(e) => setTradeType(e.target.value)} className='h-4 w-4 text-pink-600 border-gray-300 focus:ring-pink-500' />
+                    <input type='radio' id="tradeTypeWolse" name="tradeType" value="월세" checked={tradeType === '월세'} onChange={(e) => setTradeType(e.target.value)} className='h-4 w-4 text-pink-600 border-gray-300 focus:ring-pink-500' />
                     <label htmlFor='tradeTypeWolse' className='ml-2 block text-sm text-gray-900'>월세</label>
                 </div>
               </div>
             </div>
             {/* 전세 */}
-            {tradeType === 'jeonse' && (
+            {tradeType === '전세' && (
               <div className='md:col-span-2 grid grid-cols-2 gap-x-6' >
                 <div>
                   <label className='block text-sm font-semibold text-gray-700 mb-1'>전세금 (최소)</label>
@@ -146,7 +153,7 @@ const PreferenceView = () => {
               </div>
             )}
             {/* 월세 */}
-            {tradeType === 'wolse' && (
+            {tradeType === '월세' && (
               <div className='md:col-span-2'>
                 <div>
                   <label className='block text-sm font-semibold text-gray-700 mb-1'>보증금 (최대)</label>
