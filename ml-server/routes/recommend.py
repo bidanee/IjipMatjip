@@ -38,7 +38,6 @@ class RecommendationRequest(BaseModel):
   room_type: str | None = None
   
 @router.post("/neighborhood")
-@router.post("/neighborhood")
 def recommend_neighborhood_and_estates(request: RecommendationRequest):
   conn = get_db_connection()
   try:
@@ -66,6 +65,10 @@ def recommend_neighborhood_and_estates(request: RecommendationRequest):
         
         where_clauses_prop = [f"({dong_conditions})"]
         params_prop = dong_params
+        
+        if request.deal_type:
+          where_clauses_prop.append("deal_type = %s")
+          params_prop.append(request.deal_type)
         
         if request.room_type:
           where_clauses_prop.append("room_type LIKE %s")
