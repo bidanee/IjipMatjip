@@ -11,7 +11,7 @@ const KAKAO_REST_API_KEY = process.env.KAKAO_REST_API_KEY
 directionsRouter.post('/', async (req,res) => {
   //origin: 출발지, destination: 도착지
   const {origin, destination} = req.body
-    // 👇 디버깅을 위해 받은 좌표를 그대로 출력해봅니다.
+    // 👇 좌표확인 디버깅 코드
   // console.log('--- 길찾기 요청 수신 ---');
   // console.log('출발지 (origin):', origin);
   // console.log('도착지 (destination):', destination);

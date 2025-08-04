@@ -1,179 +1,205 @@
-import { useState, useEffect } from 'react'
-import {useLocation, Link} from 'react-router-dom'
-import axios from 'axios'
-import InfrastructureMap from '../components/InfrastructureMap'
+import React, { useState, useEffect } from 'react';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import InfrastructureMap from '../components/InfrastructureMap';
+import { getPhotoUrl } from '../../../ml-server/function/getPhotoUrl'
 
+// --- 아이콘 컴포넌트 ---
+const ArrowLeftIcon = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+);
+const Share2Icon = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
+);
+const HeartIcon = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+);
+const ZapIcon = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2z"/></svg>
+);
+const CheckCircleIcon = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+);
+const XCircleIcon = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+);
+const MapPinIcon = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+);
 
-function DetailView() {
-  const location = useLocation()
-  // todo 
-  // const {propertyId} = useParams() 확장용
-  const propertyData = location.state?.propertyData;
-  const searchConditions = location.state?.conditions;
+// 가격 포맷팅 함수
+const formatPrice = (prop) => {
+  if (!prop) return '정보 없음';
+  if (prop.deal_type === '월세') {
+    const deposit = prop.price_deposit >= 10000 ? `${(prop.price_deposit / 10000).toFixed(0)}억` : `${prop.price_deposit}만`;
+    return `${deposit} / ${prop.price_rent}`;
+  }
+  if (prop.deal_type === '전세') {
+    return prop.price_deposit >= 10000 ? `${(prop.price_deposit / 10000).toFixed(1)}억` : `${prop.price_deposit}만`;
+  }
+  return '정보 없음';
+};
 
-  const [loading, setLoading] = useState(true)
+const DetailView = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const estateData = location.state?.estateData;
+  const photo_urls = getPhotoUrl(estateData.photo_url)
+
+  // AI 리포트, 인프라, 출퇴근 시간 등 추가 데이터를 위한 State
+  const [aiReport, setAiReport] = useState(null);
+  const [infrastructure, setInfrastructure] = useState({ schools: [], subways: [], hospitals: [], marts: [], parks: [] });
   const [commuteTime, setCommuteTime] = useState(null);
-  // 인프라 데이터와 필터 상태 관리
-  const [infrastructure, setInfrastructure] = useState({schools:[], subways:[], hospitals:[], marts:[], parks:[]})
-  const [infraFilters, setInfraFilters] = useState({
-    school: true,
-    subway: false,
-    hospital: false,
-    mart: false,
-    park: false,
-  })
+  const [loading, setLoading] = useState(true);
+  
+  const [selectedImage, setSelectedImage] = useState(photo_urls[0] || 'https://placehold.co/800x500/e2e8f0/4a5568?text=Image');
 
   useEffect(() => {
-    if(!propertyData?.latitude){
+    if (!estateData) {
       setLoading(false);
       return;
     }
 
     const fetchDetails = async () => {
       setLoading(true);
-      try{
-        // 여러 API 호출을 병렬로 처리
-        const promises = [];
+      try {
+        // TODO: 실제 AI 리포트 생성 API 호출 , 현재 더미 데이터
+        setTimeout(() => {
+          setAiReport({
+            score: 92,
+            summary: "교통 편의성과 생활 인프라를 중시하는 1인 가구에게 92% 일치하는 최적의 매물입니다.",
+            pros: ["강남역 도보 1분 거리의 초역세권", "24시간 보안 및 최신 시설", "주변에 맛집, 카페, 병원 등 편의시설 밀집"],
+            cons: ["월세가 주변 시세보다 약간 높음", "주차 공간이 협소할 수 있음"]
+          });
+        }, 1000);
 
-        // 1. 출퇴근 시간 계산 (회사 주소가 있을 경우)
-        if (searchConditions?.commute?.address){
-          const geocodePromise = axios.post('/api/geocode',{
-            address: searchConditions.commute.address
-          })
-          promises.push(geocodePromise)
-        }
-
-        // 2. 주변 인프라 정보 요청
+        // 주변 인프라 정보 요청
         const infraPromise = axios.post('/api/infrastructure', {
-          latitude: propertyData.latitude,
-          longitude: propertyData.longitude,
-          radius_km:0.5
+          latitude: estateData.latitude,
+          longitude: estateData.longitude,
+          radius_km: 1.0
         });
-        promises.push(infraPromise)
+        
+        // 모든 API 호출을 병렬로 처리
+        const [infraRes] = await Promise.all([infraPromise]);
+        setInfrastructure(infraRes.data);
 
-        // 병렬 호출 실행
-        const results = await Promise.all(promises);
-
-        let resultIndex = 0;
-        if(searchConditions?.commute?.address){
-          const workCoords = results[resultIndex].data;
-          const directionsResponse = await axios.post('/api/directions',{
-            origin:{lat:propertyData.latitude, lng:propertyData.longitude},
-            destination: workCoords
-          })
-          setCommuteTime(directionsResponse.data.duration_minutes);
-          resultIndex++;
-        }
-
-        setInfrastructure(results[resultIndex].data);
-      } catch(error){
-        console.error("상세 정보 로딩 실패 : ",error);
+      } catch (error) {
+        console.error("상세 정보 로딩 실패:", error);
       } finally {
         setLoading(false);
       }
     };
+
     fetchDetails();
-  },[propertyData,searchConditions]);
+  }, [estateData]);
 
-  const handleFilterChange = (e) => {
-    const {name, checked} = e.target;
-    setInfraFilters(prev => ({...prev, [name]:checked}));
-  };
-
-  if(!propertyData){
+  if (!estateData) {
     return (
-      <div>
+      <div className="text-center p-10">
         <p>매물 정보가 없습니다.</p>
-        <Link to="/">처음으로 돌아가기</Link>
+        <Link to="/" className="text-blue-500 hover:underline">처음으로 돌아가기</Link>
       </div>
     );
   }
 
-  // 필터링된 마커 목록 생성
-  const getFilteredMarkers = () => {
-    if(!infrastructure) return [];
-
-    let markers = [];
-    if(infraFilters.school) markers = markers.concat(infrastructure.schools.map(item => ({...item,type:'school'})));
-    if(infraFilters.subway) markers = markers.concat(infrastructure.subways.map(item => ({...item, type:'subway'})))
-    if(infraFilters.hospital) markers = markers.concat(infrastructure.hospitals.map(item => ({...item, type:'hospital'})))
-    if(infraFilters.mart) markers = markers.concat(infrastructure.marts.map(item => ({...item, type:'mart'})))
-    if(infraFilters.park) markers = markers.concat(infrastructure.parks.map(item => ({...item, type:'park'})))
-    return markers;
-  }
+  // 사진이 여러 개인 것처럼 보이게 하기 위한 더미 데이터
+  
 
   return (
-    <div>
-      <Link to='/recommend' state={{conditions:searchConditions}} className='text-blue-500 hover:underline'>
-        &larr; 목록으로 돌아가기
-      </Link>
-      <div className='mt-4 grid md:grid-cols-2 gap-8'>
-        {/* 좌측: 지도분석 */}
-        <div>
-          <h3 className='text-xl font-bold mb-2'>지도 분석</h3>
-          <div className='flex gap-4 mb-2 flex-wrap'>
-            <label>
-              <input type='checkbox' name='school' checked={infraFilters.school} onChange={handleFilterChange}/>
-              학교
-            </label>
-            <label>
-              <input type='checkbox' name='subway' checked={infraFilters.subway} onChange={handleFilterChange}/>
-              지하철
-            </label>
-            <label>
-              <input type='checkbox' name='hospital' checked={infraFilters.hospital} onChange={handleFilterChange}/>
-              병원
-            </label>
-            <label>
-              <input type='checkbox' name='mart' checked={infraFilters.mart} onChange={handleFilterChange}/>
-              마트
-            </label>
-            <label>
-              <input type='checkbox' name='park' checked={infraFilters.park} onChange={handleFilterChange}/>
-              공원
-            </label>
-          </div>
-          <div className='border rounded-lg overflow-hidden'>
-            <InfrastructureMap
-              lat={propertyData.latitude}
-              lng={propertyData.longitude}
-              isPropertyMarker={true}
-              markers={getFilteredMarkers()}
-            />
+    <div className="bg-gray-50 min-h-screen font-sans">
+      <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-20">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-600 hover:text-slate-900">
+            <ArrowLeftIcon className="w-5 h-5" />
+            <span className="font-semibold">목록으로</span>
+          </button>
+          <div className="flex items-center gap-2">
+            <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"><Share2Icon className="w-5 h-5 text-gray-600"/></button>
+            <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"><HeartIcon className="w-5 h-5 text-gray-600"/></button>
           </div>
         </div>
+      </header>
+      
+      <main className="container mx-auto p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Column */}
+            <div className="space-y-8">
+                <div className="mb-8">
+                    <img src={selectedImage} alt="Main view" className="w-full h-auto max-h-[500px] object-cover rounded-2xl shadow-lg mb-4" />
+                    <div className="grid grid-cols-4 gap-4">
+                        {photo_urls.map((img, index) => (
+                            <img 
+                                key={index} 
+                                src={img} 
+                                alt={`Thumb ${index + 1}`} 
+                                onClick={() => setSelectedImage(img)} 
+                                className={`w-full h-auto object-cover rounded-lg cursor-pointer transition-all duration-200 ${selectedImage === img ? 'ring-4 ring-[#FF7E97] shadow-md' : 'opacity-70 hover:opacity-100'}`} 
+                            />
+                        ))}
+                    </div>
+                </div>
 
-        {/* 우측: 상세정보 */}
-        <div className='space-y-6'>
-          <div>
-            <h3 className='text-2xl font-bold'>{propertyData.name}</h3>
-            <p className='text-gray-600'>{Math.round(propertyData.size_m2 /3.3)}평, {propertyData.floor}층</p>
-          </div>
-          <div className='p-4 border rounded-lg'>
-            <p className='text-sm text-gray-500'>금액</p>
-            <p className='text-3xl font-bold text-blue-600'>
-              {propertyData.predicted_price ? `${(propertyData.predicted_price / 10000).toFixed(1)}억 원`: '정보 없음'}
-            </p>
-          </div>
-          <div className='p-4 border rounded-lg'>
-            <h4 className='font-bold mb-2'>주변 인프라 (반경 500m)</h4>
-            <ul className='space-y-1 text-sm'>
-              <li>🏫 학교: {infrastructure.schools.length}개</li>
-              <li>🚇 지하철: {infrastructure.subways.length}개</li>
-              <li>🏥 병원: {infrastructure.hospitals.length}개</li>
-              <li>🛒 마트: {infrastructure.marts.length}개</li>
-              <li>🌳 공원: {infrastructure.parks.length}개</li>
-            </ul>
-          </div>
-          <div className='p-4 border rounded-lg'>
-            <h4 className='font-bold mb-2'>출퇴근 분석</h4>
-            {loading ? <p className='text-sm'>계산 중...</p>:
-            commuteTime ? <p className='text-sm'>🚇 대중교통: 약 {commuteTime}분</p> : <p className='text-sm'>회사 주소가 입력되지 않았습니다.</p>}
-          </div>
+                {loading || !aiReport ? (
+                  <div className="bg-gradient-to-br from-pink-50 to-orange-50 p-6 rounded-2xl shadow-md text-center">
+                    <p>AI 리포트를 생성 중입니다...</p>
+                  </div>
+                ) : (
+                  <div className="bg-gradient-to-br from-pink-50 to-orange-50 p-6 rounded-2xl shadow-md">
+                      <div className="flex items-center gap-3 mb-4">
+                          <ZapIcon className="w-8 h-8 text-[#FF7E97]" />
+                          <h2 className="text-2xl font-bold text-slate-900">AI 분석 리포트</h2>
+                          <span className="px-3 py-1 text-sm font-bold text-white bg-gradient-to-r from-[#FF7E97] to-[#f89baf] rounded-full">
+                              SCORE {aiReport.score}
+                          </span>
+                      </div>
+                      <p className="text-gray-700 mb-6">{aiReport.summary}</p>
+                      <div className="grid md:grid-cols-2 gap-6">
+                          <div>
+                              <h4 className="font-bold text-green-600 mb-2">👍 추천하는 이유</h4>
+                              <ul className="space-y-2 text-sm text-gray-600">
+                                  {aiReport.pros.map((pro, i) => <li key={i} className="flex gap-2"><CheckCircleIcon className="text-green-500 flex-shrink-0 mt-0.5"/>{pro}</li>)}
+                              </ul>
+                          </div>
+                          <div>
+                              <h4 className="font-bold text-red-600 mb-2">🤔 고려할 점</h4>
+                              <ul className="space-y-2 text-sm text-gray-600">
+                                  {aiReport.cons.map((con, i) => <li key={i} className="flex gap-2"><XCircleIcon className="text-red-500 flex-shrink-0 mt-0.5"/>{con}</li>)}
+                              </ul>
+                          </div>
+                      </div>
+                  </div>
+                )}
+            </div>
+            
+            {/* Right Column */}
+            <div className="space-y-8">
+                <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+                    <h1 className="text-3xl font-bold text-slate-900">{estateData.room_type}</h1>
+                    <p className="text-gray-500 mt-2 flex items-center gap-2"><MapPinIcon /> {estateData.address}</p>
+                    <div className="mt-6 pt-6 border-t border-gray-200 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <div><p className="text-sm text-gray-500">거래 종류</p><p className="font-bold text-lg text-slate-800">{estateData.deal_type}</p></div>
+                        <div><p className="text-sm text-gray-500">가격</p><p className="font-bold text-lg text-slate-800">{formatPrice(estateData)}</p></div>
+                        <div><p className="text-sm text-gray-500">면적</p><p className="font-bold text-lg text-slate-800">{`${Math.round(estateData.area_m2 / 3.3)}평`}</p></div>
+                        <div><p className="text-sm text-gray-500">층</p><p className="font-bold text-lg text-slate-800">{estateData.floor}</p></div>
+                    </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+                    <h2 className="text-2xl font-bold text-slate-900 mb-4">위치 및 주변 정보</h2>
+                    <div className="h-80 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+                      <InfrastructureMap 
+                        lat={estateData.latitude} 
+                        lng={estateData.longitude} 
+                        isEstateMarker={true}
+                        markers={[]} // TODO: 필터링 기능 연동
+                      />
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>    
+      </main>
     </div>
-  )
-}
+  );
+};
 
-export default DetailView
+export default DetailView;

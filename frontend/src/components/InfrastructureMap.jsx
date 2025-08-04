@@ -8,12 +8,12 @@ const markerIcons = {
   park: { src: '/images/park.png', size: { width: 40, height: 40 } },
 };
 
-const InfrastructureMap = ({lat, lng, isPropertyMarker = false, markers = []}) => {
+const InfrastructureMap = ({lat, lng, isEstateMarker = false, markers = []}) => {
   // 원래있던 useEffect API 제거
 
   return (
     <KakaoMap center={{ lat, lng}} style={{width:'100%', height:'450px'}} level={5}>
-      {isPropertyMarker && (
+      {isEstateMarker && (
         <MapMarker
           position={{ lat, lng }}
           image={{

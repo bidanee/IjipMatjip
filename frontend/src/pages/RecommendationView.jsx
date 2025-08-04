@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import NeighborhoodCard from '../components/NeighborhoodCard';
+import { getPhotoUrl } from '../../../ml-server/function/getPhotoUrl'
 
 const formatPrice = (priceInManwon) => {
   if (!priceInManwon) return '정보 없음';
@@ -17,7 +18,6 @@ const RecommendationView = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const searchConditions = location.state?.conditions;
-
   const [recommendations, setRecommendations] = useState([]);
   const [estates, setEstates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +41,6 @@ const RecommendationView = () => {
             size_pyeong: searchConditions.size_pyeong,
             room_type: searchConditions.room_type,
         };
-        console.log("서버로 전송하는 최종 payload:", payload);
         const response = await axios.post('/api/recommend/neighborhood', payload);
         const { neighborhoods, estates } = response.data;
         
@@ -71,6 +70,7 @@ const RecommendationView = () => {
     return <div className="text-center p-10">AI가 최적의 동네와 매물을 찾고 있습니다...</div>;
   }
 
+
   return (
     <div className="w-full flex justify-center min-h-screen bg-gradient-to-br from-pink-100 to-orange-50 p-4 py-10">
       <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
@@ -83,23 +83,28 @@ const RecommendationView = () => {
           <h1 className='text-3xl font-bold text-slate-900'>AI 추천 결과입니다.</h1>
           <p className='text-gray-600 mt-2'>사용자님의 조건을 분석하여 최적의 동네와 매물을 찾았어요.</p>
         </div>
-        <section>
+        <section className='flex flex-col gap-2'>
+          <div className='flex gap-2 items-center'>
           <h2 className='text-xl font-bold text-slate-800 mb-4'>이런 동네는 어떠세요?</h2>
-          <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-            {recommendations.map(dong => (
-              <div key={dong.dong} onClick={() => handleNeighborhoodClick(dong.dong)}
-                className={`bg-white/80 backdrop-blur-lg p-5 rounded-xl shadow-lg border-2 transition-all duration-300 cursor-pointer ${selectedDong === dong.dong ? 'border-pink-400 ring-2 ring-[#FF7E97]' : 'border-gray-200'}`}
-              >
-                <h3 className='font-bold text-slate-900'>{dong.dong}</h3>
-                <p className='text-sm text-gray-500 mt-1'>{dong.sigungu_name}</p>
-              </div>
+          <button onClick={() => setSelectedDong(null)} className={`bg-white/80 rounded-xl border-2 ${!selectedDong ? 'border-pink-200 ring-2 ring-[#FF7E97]' :'border-gray-200'} px-1  cursor-pointer`}> 전체보기 </button>
+          </div>
+          <div className='grid grid-cols-2 md:grid-cols-5 gap-4'>
+            {recommendations.map((dong,index) => (
+              <NeighborhoodCard key={index} dongData={dong} onCardClick={handleNeighborhoodClick} isSelected={selectedDong === dong.dong}/>
+              // <div key={dong.dong} onClick={() => handleNeighborhoodClick(dong.dong)}
+              //   className={`bg-white/80 backdrop-blur-lg p-5 rounded-xl shadow-lg border-2 transition-all duration-300 cursor-pointer ${selectedDong === dong.dong ? 'border-pink-400 ring-2 ring-[#FF7E97]' : 'border-gray-200'}`}
+              // >
+              //   <h3 className='font-bold text-slate-900'>{dong.dong}</h3>
+              //   <p className='text-sm text-gray-500 mt-1'>여기는 태그</p>
+              // </div>
             ))}
-            <div onClick={() => setSelectedDong(null)} 
+            {/* <div onClick={() => setSelectedDong(null)} 
               className={`bg-white/80 backdrop-blur-lg p-5 rounded-xl shadow-lg border-2 transition-all duration-300 cursor-pointer flex flex-col justify-center items-center ${!selectedDong ? 'border-pink-400 ring-2 ring-[#FF7E97]' : 'border-gray-200'}`}
             >
               <h3 className='font-bold text-slate-900'>전체 보기</h3>
               <p className='text-sm text-gray-500 mt-1'>모든 추천 매물</p>
-            </div>
+            </div> */}
+            
           </div>
         </section>
         <section>
@@ -107,12 +112,12 @@ const RecommendationView = () => {
             맞춤 매물 리스트
             {selectedDong && <span className='text-sm font-semibold text-pink-600 bg-pink-100 px-3 py-1 rounded-full ml-3'>{selectedDong}</span>}
           </h2>
-          <div className='space-y-4'>
+          <div className='space-y-4 flex flex-col gap-2'>
             {filteredEstates.length > 0 ? (
               filteredEstates.map(prop => (
-                <Link to={`/detail/${prop.id}`} state={{ propertyData: prop, conditions: searchConditions }} key={prop.id} className='no-underline text-black'>
+                <Link to={`/detail/${prop.id}`} state={{ estateData: prop, conditions: searchConditions }} key={prop.id} className='no-underline text-black'>
                   <div className='bg-white/80 backdrop-blur-lg p-4 rounded-xl shadow-lg border border-gray-200 flex items-center gap-6 hover:shadow-2xl hover:border-pink-300 transition-all duration-300 cursor-pointer'>
-                    <img src={prop.photo_url} alt={prop.address} className='w-32 h-32 object-cover rounded-lg' onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/200x130/fbcfe8/4a044e?text=No+Image'; }}/>
+                    <img src={getPhotoUrl(prop.photo_url)[0]} alt={prop.address} className='w-32 h-32 object-cover rounded-lg' onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/200x130/fbcfe8/4a044e?text=No+Image'; }}/>
                     <div className='flex-grow'>
                       <p className='text-sm font-semibold text-gray-500'>{prop.address}</p>
                       <h3 className='text-lg font-bold text-slate-900 my-1'>{`${prop.room_type}, ${Math.round(prop.area_m2 / 3.3)}평, ${prop.floor}`}</h3>

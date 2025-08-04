@@ -65,7 +65,6 @@ const PreferenceView = () => {
   };
 
   const handleSearch = () => {
-    // --- 👇 이 부분을 수정합니다 ---
     const searchConditions = {
       region: selectedSigungu,
       deal_type: tradeType,
@@ -78,15 +77,13 @@ const PreferenceView = () => {
         rent_max: wolseMax ? parseInt(wolseMax) : null,
       },
       room_type: roomType === '전체' ? null : roomType,
-      // 평수 데이터를 {min, max} 객체 형태로 만듭니다.
       size_pyeong: {
         min: areaPyeong ? parseInt(areaPyeong) : null,
       },
       preferences: selectedLifestyles,
     };
-    // --- 여기까지 수정 ---
     
-    console.log("최종 검색 조건:", searchConditions);
+    
     navigate('/recommend', { state: { conditions: searchConditions } });
   };
 
