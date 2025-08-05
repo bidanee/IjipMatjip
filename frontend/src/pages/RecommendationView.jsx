@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import NeighborhoodCard from '../components/NeighborhoodCard';
-import { getPhotoUrl } from '../../../ml-server/function/getPhotoUrl'
+import { getPhotoUrl } from '../function/getPhotoUrl'
+
 
 const formatPrice = (priceInManwon) => {
   if (!priceInManwon) return '정보 없음';
@@ -72,7 +73,7 @@ const RecommendationView = () => {
 
 
   return (
-    <div className="w-full flex justify-center min-h-screen bg-gradient-to-br from-pink-100 to-orange-50 p-4 py-10">
+    <div className="w-full flex justify-center min-h-screen p-4 py-10">
       <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
         <div className="w-full">
           <button onClick={() => navigate('/')} className='bg-white text-gray-700 font-semibold px-6 py-2 rounded-lg shadow-md hover:bg-gray-50 transition flex items-center gap-2'>
@@ -88,23 +89,10 @@ const RecommendationView = () => {
           <h2 className='text-xl font-bold text-slate-800 mb-4'>이런 동네는 어떠세요?</h2>
           <button onClick={() => setSelectedDong(null)} className={`bg-white/80 rounded-xl border-2 ${!selectedDong ? 'border-pink-200 ring-2 ring-[#FF7E97]' :'border-gray-200'} px-1  cursor-pointer`}> 전체보기 </button>
           </div>
-          <div className='grid grid-cols-2 md:grid-cols-5 gap-4'>
+          <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
             {recommendations.map((dong,index) => (
               <NeighborhoodCard key={index} dongData={dong} onCardClick={handleNeighborhoodClick} isSelected={selectedDong === dong.dong}/>
-              // <div key={dong.dong} onClick={() => handleNeighborhoodClick(dong.dong)}
-              //   className={`bg-white/80 backdrop-blur-lg p-5 rounded-xl shadow-lg border-2 transition-all duration-300 cursor-pointer ${selectedDong === dong.dong ? 'border-pink-400 ring-2 ring-[#FF7E97]' : 'border-gray-200'}`}
-              // >
-              //   <h3 className='font-bold text-slate-900'>{dong.dong}</h3>
-              //   <p className='text-sm text-gray-500 mt-1'>여기는 태그</p>
-              // </div>
             ))}
-            {/* <div onClick={() => setSelectedDong(null)} 
-              className={`bg-white/80 backdrop-blur-lg p-5 rounded-xl shadow-lg border-2 transition-all duration-300 cursor-pointer flex flex-col justify-center items-center ${!selectedDong ? 'border-pink-400 ring-2 ring-[#FF7E97]' : 'border-gray-200'}`}
-            >
-              <h3 className='font-bold text-slate-900'>전체 보기</h3>
-              <p className='text-sm text-gray-500 mt-1'>모든 추천 매물</p>
-            </div> */}
-            
           </div>
         </section>
         <section>

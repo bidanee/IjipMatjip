@@ -81,7 +81,7 @@ def migrate_csv_to_db():
         """)
         print("✅ 새로운 estates 테이블 생성 완료")
         
-        df = pd.read_csv('../datas/real_estate_data.csv')
+        df = pd.read_csv('../datas/real_estate_lists_cleaned.csv')
         df = df.where(pd.notnull(df), None)
         api_key = os.getenv("KAKAO_REST_API_KEY")
 

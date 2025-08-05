@@ -16,7 +16,7 @@ def update_photo_url():
         cur = conn.cursor()
         print("✅ DB 연결 성공")
 
-        df = pd.read_csv('../datas/real_estate_data.csv')
+        df = pd.read_csv('../datas/real_estate_lists_cleaned.csv')
         df.dropna(subset=['상세주소', '방사진'], inplace=True)
 
         update_count = 0

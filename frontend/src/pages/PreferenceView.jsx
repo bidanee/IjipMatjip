@@ -88,7 +88,7 @@ const PreferenceView = () => {
   };
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-100 to-orange-50 p-4">
+    <div className="w-full min-h-screen flex items-center justify-center  p-4">
       <div className="w-full max-w-2xl flex flex-col gap-8 bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-gray-200">
         <div className="text-center flex flex-col gap-2">
           <div className="flex justify-center items-center">
