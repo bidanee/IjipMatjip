@@ -15,7 +15,7 @@ const ZapIcon = (props) => (
   </svg>
 );
 
-const lifestyleOptions = ['조용한 곳', '학군 중요', '교통 편리', '번화가', '생활편의시설','가성비'];
+const lifestyleOptions = ['조용한 곳', '학군 중요', '교통 편리', '번화가', '생활편의시설'];
 
 const PreferenceView = () => {
   const navigate = useNavigate();

@@ -40,7 +40,6 @@ class InfrastructureAnalyzer:
         conn = None
         try:
             conn = psycopg2.connect(**self.db_config)
-            """DictCursor를 사용하면 fetchall() 결과가 [{'name': ..., 'latitude': ..., 'longitude': ...}, ...]처럼 딕셔너리 형태로 나와서 코드가 더 가독성 있고 명확함 """
             with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
                 cur.execute(query, (lon, lat, radius_km * 1000))
                 rows = cur.fetchall()
