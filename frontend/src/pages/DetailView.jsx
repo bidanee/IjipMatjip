@@ -45,6 +45,7 @@ const DetailView = () => {
   const navigate = useNavigate();
   const estateData = location.state?.estateData;
   const photo_urls = getPhotoUrl(estateData.photo_url)
+  const searchConditions = location.state?.conditions
 
   // AI 리포트, 인프라, 출퇴근 시간 등 추가 데이터를 위한 State
   const [aiReport, setAiReport] = useState(null);
@@ -64,26 +65,42 @@ const DetailView = () => {
       setLoading(true);
       try {
         // TODO: 실제 AI 리포트 생성 API 호출 , 현재 더미 데이터
-        setTimeout(() => {
-          setAiReport({
-            score: 92,
-            summary: "교통 편의성과 생활 인프라를 중시하는 1인 가구에게 92% 일치하는 최적의 매물입니다.",
-            pros: ["강남역 도보 1분 거리의 초역세권", "24시간 보안 및 최신 시설", "주변에 맛집, 카페, 병원 등 편의시설 밀집"],
-            cons: ["월세가 주변 시세보다 약간 높음", "주차 공간이 협소할 수 있음"]
-          });
-        }, 1000);
-
-        // 주변 인프라 정보 요청
-        const infraPromise = axios.post('/api/infrastructure', {
+        const reportPromise = axios.post('/api/report/generate',{
+          property_data : estateData,
+          user_preferences: searchConditions
+        })
+        const infraPromise = axios.post('/api/infrastructure',{
           latitude: estateData.latitude,
           longitude: estateData.longitude,
-          radius_km: 1.0
-        });
+          radius_km:1.0
+        })
+
+        const promises = [reportPromise]
+
+        if(searchConditions?.commute?.address){
+          promises.push(axios.post('/api/geocode', {address: searchConditions.commute.address}))
+        }
+
+        promises.push(infraPromise)
         
         // 모든 API 호출을 병렬로 처리
-        const [infraRes] = await Promise.all([infraPromise]);
-        setInfrastructure(infraRes.data);
+        const results = await Promise.all(promises);
+        let resultIndex = 0;
+        
+        setAiReport(results[resultIndex].data);
+        resultIndex++;
 
+        if(searchConditions?.commute?.address){
+          const workCoords = results[resultIndex].data;
+          const directionsRes = await axios.post('/api/directions', {
+            origin:{lat: estateData.latitude, lng: estateData.longitude},
+            destination: workCoords,
+          })
+          setCommuteTime(directionsRes .data.duration_minutes)
+          resultIndex++;
+        }
+
+        setInfrastructure(results[resultIndex].data)
       } catch (error) {
         console.error("상세 정보 로딩 실패:", error);
       } finally {
@@ -92,7 +109,7 @@ const DetailView = () => {
     };
 
     fetchDetails();
-  }, [estateData]);
+  }, [estateData, searchConditions]);
 
   if (!estateData) {
     return (
@@ -170,15 +187,15 @@ const DetailView = () => {
                     <p>AI 리포트를 생성 중입니다...</p>
                   </div>
                 ) : (
-                  <div className=" min-h-80 bg-gradient-to-br from-pink-50 to-orange-50 p-6 rounded-2xl shadow-md flex flex-col justify-center gap-8">
-                      <div className="flex items-center gap-3 mb-4 justify-center">
+                  <div className="bg-gradient-to-br from-pink-50 to-orange-50 p-6 rounded-2xl shadow-md">
+                      <div className="flex items-center gap-3 mb-4">
                           <ZapIcon className="w-8 h-8 text-[#FF7E97]" />
                           <h2 className="text-2xl font-bold text-slate-900">AI 분석 리포트</h2>
                           <span className="px-3 py-1 text-sm font-bold text-white bg-gradient-to-r from-[#FF7E97] to-[#f89baf] rounded-full">
                               SCORE {aiReport.score}
                           </span>
                       </div>
-                      <p className="text-gray-700 mb-6 text-center">{aiReport.summary}</p>
+                      <p className="text-gray-700 mb-6">{aiReport.summary}</p>
                       <div className="grid md:grid-cols-2 gap-6">
                           <div>
                               <h4 className="font-bold text-green-600 mb-2">👍 추천하는 이유</h4>

@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from dotenv import load_dotenv
-from routes import predict, recommend, infrastructure
+from routes import predict, recommend, infrastructure, report
 import json # json 라이브러리를 임포트합니다.
 
 load_dotenv()
@@ -32,7 +32,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 app.include_router(predict.router, prefix="/predict", tags=["Predictions"])
 app.include_router(recommend.router, prefix="/recommend", tags=["Recommendations"])
 app.include_router(infrastructure.router, prefix="/infrastructure", tags=["Infrastructure"])
-
+app.include_router(report.router, prefix="/report", tags=["Reports"])
 @app.get("/")
 def read_root():
   return {"message" : "AI Server is running"}
