@@ -35,7 +35,7 @@ const PreferenceView = () => {
   const [roomType, setRoomType] = useState('전체');
   const [areaPyeong, setAreaPyeong] = useState('');
 
-  const [selectedLifestyles, setSelectedLifestyles] = useState(['교통 편리']);
+  const [selectedLifestyles, setSelectedLifestyles] = useState(['']);
   
   const [sidoList, setSidoList] = useState([]);
   const [sigunguList, setSigunguList] = useState([]);

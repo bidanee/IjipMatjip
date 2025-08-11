@@ -187,8 +187,8 @@ const DetailView = () => {
                     <p>AI 리포트를 생성 중입니다...</p>
                   </div>
                 ) : (
-                  <div className="bg-gradient-to-br from-pink-50 to-orange-50 p-6 rounded-2xl shadow-md">
-                      <div className="flex items-center gap-3 mb-4">
+                  <div className="flex flex-col gap-2 bg-gradient-to-br from-pink-50 to-orange-50 p-6 rounded-2xl shadow-md">
+                      <div className="flex items-center gap-2 mb-4">
                           <ZapIcon className="w-8 h-8 text-[#FF7E97]" />
                           <h2 className="text-2xl font-bold text-slate-900">AI 분석 리포트</h2>
                           <span className="px-3 py-1 text-sm font-bold text-white bg-gradient-to-r from-[#FF7E97] to-[#f89baf] rounded-full">
@@ -197,15 +197,15 @@ const DetailView = () => {
                       </div>
                       <p className="text-gray-700 mb-6">{aiReport.summary}</p>
                       <div className="grid md:grid-cols-2 gap-6">
-                          <div>
+                          <div className=' flex flex-col gap-2'>
                               <h4 className="font-bold text-green-600 mb-2">👍 추천하는 이유</h4>
-                              <ul className="space-y-2 text-sm text-gray-600">
+                              <ul className="space-y-2 text-sm text-gray-600 flex flex-col gap-2">
                                   {aiReport.pros.map((pro, i) => <li key={i} className="flex gap-2"><CheckCircleIcon className="text-green-500 flex-shrink-0 mt-0.5"/>{pro}</li>)}
                               </ul>
                           </div>
-                          <div>
-                              <h4 className="font-bold text-red-600 mb-2">🤔 고려할 점</h4>
-                              <ul className="space-y-2 text-sm text-gray-600">
+                          <div className=' flex flex-col gap-2'>
+                              <h4 className="font-bold text-red-600 ">🤔 고려할 점</h4>
+                              <ul className="space-y-2 text-sm text-gray-600 flex flex-col gap-2">
                                   {aiReport.cons.map((con, i) => <li key={i} className="flex gap-2"><XCircleIcon className="text-red-500 flex-shrink-0 mt-0.5"/>{con}</li>)}
                               </ul>
                           </div>
